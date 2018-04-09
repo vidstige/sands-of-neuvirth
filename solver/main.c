@@ -1,8 +1,9 @@
 //#include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <math.h>
 
-#define SIZE 42 // Best not to raise this very high
+#define SIZE 32 // Best not to raise this very high
 
 extern void dens_step ( int M, int N, int O, float * x, float * x0, float * u, float * v, float * w, float diff, float dt );
 extern void vel_step (int M, int N, int O, float * u, float * v,  float * w, float * u0, float * v0, float * w0, float visc, float dt );
@@ -49,9 +50,13 @@ void add_densities(float *d) {
     /*for (int i = 0; i < size; i++) {
         d[i] = 0.0f;
     }*/
-    d[IX(M / 2 + 1, N / 2, O / 2)] = 10;
-    d[IX(M / 2 - 1, N / 2, O / 2)] = 10;
-    d[IX(M / 2, N / 2, O / 2)] = 10;
+
+    d[IX(M / 2 + 1, N / 2, O / 2)] = 1;
+    d[IX(M / 2 - 1, N / 2, O / 2)] = 1;
+
+    d[IX(M / 2, N / 2 + 1, O / 2)] = 1;
+    d[IX(M / 2, N / 2 - 1, O / 2)] = 1;
+    d[IX(M / 2, N / 2, O / 2)] = 5;
 }
 
 void add_velocities(float *u, float *v, float *w) {
@@ -62,9 +67,9 @@ void add_velocities(float *u, float *v, float *w) {
     
     for (int y = 0; y < N; y++) {
         for (int x = 0; x < M; x++) {
-            u[IX(x, y, 3)] = 10.0f;
-            v[IX(x, y, 3)] = 0.0f;
-            w[IX(x, y, 3)] = 0.0f;
+            u[IX(x, y, O / 2)] = 0.0f;
+            v[IX(x, y, O / 2)] = 0.1f;
+            w[IX(x, y, O / 2)] = 0.0f;
         }
     }
 }
@@ -82,15 +87,33 @@ void render(unsigned char* buffer, int width, int height) {
         for (int x = 0; x < width; x++) {
         }
     }*/
+    float hi = -INFINITY;
+    float low = INFINITY;
+    for (int y = 0; y < N; y++) {
+        for (int x = 0; x < M; x++) {
+            for (int z = 0; z < O; z++) {
+                if (dens[IX(x, y, z)] > hi) {
+                    hi = dens[IX(x, y, z)];
+                }
+                if (dens[IX(x, y, z)] < low) {
+                    low = dens[IX(x, y, z)];
+                }
+            }
+        }
+    }
+
     for (int y = 0; y < N; y++) {
         for (int x = 0; x < M; x++) {
             int v = 0;
             for (int z = 0; z < O; z++) {
                 v += dens[IX(x, y, z)];
             }
-            buffer[(y * width + x) * 3 + 0] = 80;
-            buffer[(y * width + x) * 3 + 1] = v;
-            buffer[(y * width + x) * 3 + 2] = v;
+            
+            const int idx = (y * width + x);
+            const float scaled = (255.0f * (v - low) / (hi - low));
+            buffer[idx * 3 + 0] = scaled;
+            buffer[idx * 3 + 1] = scaled;
+            buffer[idx * 3 + 2] = v;
         }
     }
 }
