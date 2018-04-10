@@ -51,8 +51,8 @@ float randf() {
 
 void random_particles() {
     for (int i = 0; i < NUM_PARTICLES; i++) {
-        p_x[i] = (randf() - 0.5f) * 2.0f;
-        p_y[i] = (randf() - 0.5f) * 2.0f;
+        p_x[i] = (randf() - 0.5f) * 16.0f;
+        p_y[i] = (randf() - 0.5f) * 16.0f;
         p_z[i] = 4.0f; // Above ground
     }
 }
@@ -61,9 +61,9 @@ void particles_step(float* u, float *v, float *w, float dt) {
     for (int i = 0; i < NUM_PARTICLES; i++) {
         int idx = IX((int)p_x[i], (int)p_y[i], (int)p_z[i]);
         if (idx > 0 && idx < (M+2) * (N+2) * (O+2)) {
-            //p_x[i] += u[idx] * 0.1;
-            //p_y[i] += v[idx] * 0.1;
-            //p_z[i] += w[idx] * 0.1;
+            p_x[i] += u[idx] * dt;
+            p_y[i] += v[idx] * dt;
+            p_z[i] += w[idx] * dt;
         }
     }
 }
@@ -97,10 +97,7 @@ void add_velocities(float *u, float *v, float *w) {
     }
 }
 
-void simulate(float dt) {
-    add_densities(dens_prev);
-    add_velocities(u_prev, v_prev, w_prev);
-    
+void simulate(float dt) {    
     vel_step(M, N, O, u, v, w, u_prev, v_prev,w_prev, visc, dt);
     dens_step(M, N, O, dens, dens_prev, u, v, w, diff, dt);
 
@@ -113,12 +110,15 @@ void render(unsigned char* buffer, int width, int height) {
         buffer[i] = 33;
     }
     for (int i = 0; i < NUM_PARTICLES; i++) {
-        float x = width/2.0f; // + p_x[i];
-        float y = height/2.0f + p_y[i];
+        float x = width/2.0f + p_x[i] * 5;
+        float y = height/2.0f + p_y[i] * 5;
         if (x > 0 && x < width &&
             y > 0 && y < height) {
-            const int idx = (int)(x * height + y);
-            buffer[idx * 3] = 200;
+            //fprintf(stderr, "x: %.4f, y: %.4f\n", x, y);
+            const int idx = ((int)y * width + (int)x) * 3;
+            buffer[idx + 0] = 200;
+            buffer[idx + 1] = 100;
+            buffer[idx + 1] = 0;
         }
     }
 }
@@ -140,6 +140,9 @@ int main() {
     allocate_it();
     random_particles();
     while (1) {
+        add_densities(dens_prev);
+        add_velocities(u_prev, v_prev, w_prev);
+
         simulate(dt);
         render(buffer, WIDTH, HEIGHT);
         _write(buffer, WIDTH * HEIGHT, stdout);
