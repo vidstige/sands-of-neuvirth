@@ -143,6 +143,7 @@ void write_particles(FILE *target) {
         perror("fwrite");
         exit(-1);
     }
+    fflush(target);
 }
 
 int main() {

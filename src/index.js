@@ -5,8 +5,9 @@ const consume = responseReader => {
         if (result.done) { return; }
 
         // do something with the current chunk
-        const chunk = result.value;
-        console.log(chunk.length);
+        console.log(result.value.length);
+        var chunk = new DataView(result.value.buffer);
+        console.log(chunk.getFloat32(0, true));
 
         return consume(responseReader);
     });
