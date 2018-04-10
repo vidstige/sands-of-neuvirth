@@ -1,8 +1,8 @@
 CPP = gcc -Wall 
 SRCS = main.c solver3d.c
 
-all:
-	$(CPP) $(SRCS) -o fluid
+fluid: $(SRCS)
+	$(CPP) $(SRCS) -o fluid	
 
 clean:
 	@echo Cleaning up...
