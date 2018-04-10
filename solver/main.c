@@ -126,16 +126,31 @@ void render(unsigned char* buffer, int width, int height) {
 void _write(const unsigned char* buffer, size_t size, FILE* target) {
     if (fwrite(buffer, 3, size, target) != size) {
         perror("fwrite");
+        exit(-1);
+    }
+}
+
+void write_particles(FILE *target) {
+    if (fwrite(p_x, sizeof(float), NUM_PARTICLES, target) != NUM_PARTICLES) {
+        perror("fwrite");
+        exit(-1);
+    }
+    if (fwrite(p_y, sizeof(float), NUM_PARTICLES, target) != NUM_PARTICLES) {
+        perror("fwrite");
+        exit(-1);
+    }
+    if (fwrite(p_y, sizeof(float), NUM_PARTICLES, target) != NUM_PARTICLES) {
+        perror("fwrite");
+        exit(-1);
     }
 }
 
 int main() {
     const float dt = 0.4f; // delta time
 
-    const int WIDTH = 320;
-    const int HEIGHT = 200;
-
-    unsigned char buffer[WIDTH * HEIGHT * 3];
+    //const int WIDTH = 320;
+    //const int HEIGHT = 200;
+    //unsigned char buffer[WIDTH * HEIGHT * 3];
     
     allocate_it();
     random_particles();
@@ -144,8 +159,9 @@ int main() {
         add_velocities(u_prev, v_prev, w_prev);
 
         simulate(dt);
-        render(buffer, WIDTH, HEIGHT);
-        _write(buffer, WIDTH * HEIGHT, stdout);
+        write_particles(stdout);
+        //render(buffer, WIDTH, HEIGHT);
+        //_write(buffer, WIDTH * HEIGHT, stdout);
     }
 
     return 0;

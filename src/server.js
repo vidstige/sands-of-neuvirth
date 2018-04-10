@@ -10,11 +10,10 @@ const compiler = webpack(cfg);
 const app = express();
 
 app.get('/api/sand', function (req, res) {
-  //spawn('cat', ['/dev/urandom']).stdout.pipe(res);
-  //res.send('hi');
-  setInterval(function() {
+  spawn('solver/fluid').stdout.pipe(res);
+  /*setInterval(function() {
     res.write('1234567890');
-  }, 250);
+  }, 250);*/
 });
 
 app.use(middleware(compiler, {
