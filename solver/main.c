@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
+#include <unistd.h> // for usleep
 
 #define SIZE 32 // Best not to raise this very high
 
@@ -24,9 +25,9 @@ static float *dens, *dens_prev;
 
 
 #define NUM_PARTICLES 100
-static float p_x[NUM_PARTICLES];
-static float p_y[NUM_PARTICLES];
-static float p_z[NUM_PARTICLES];
+static float *p_x;
+static float *p_y;
+static float *p_z;
 
 
 void allocate_it() {
@@ -40,6 +41,10 @@ void allocate_it() {
     w_prev    = (float *) malloc(size * sizeof(float));
     dens      = (float *) malloc(size * sizeof(float));
     dens_prev = (float *) malloc(size * sizeof(float));
+
+    p_x = (float*) malloc(NUM_PARTICLES * sizeof(float));
+    p_y = (float*) malloc(NUM_PARTICLES * sizeof(float));
+    p_z = (float*) malloc(NUM_PARTICLES * sizeof(float));
 }
 
 void free_it() {
@@ -51,19 +56,24 @@ float randf() {
 
 void random_particles() {
     for (int i = 0; i < NUM_PARTICLES; i++) {
-        p_x[i] = (randf() - 0.5f) * 16.0f;
-        p_y[i] = (randf() - 0.5f) * 16.0f;
+        p_x[i] = (M/2.0f) + (randf() - 0.5f) * 16.0f;
+        p_y[i] = (N/2.0f) + (randf() - 0.5f) * 16.0f;
         p_z[i] = 4.0f; // Above ground
     }
 }
 
 void particles_step(float* u, float *v, float *w, float dt) {
     for (int i = 0; i < NUM_PARTICLES; i++) {
-        int idx = IX((int)p_x[i], (int)p_y[i], (int)p_z[i]);
-        if (idx > 0 && idx < (M+2) * (N+2) * (O+2)) {
+        if (p_x[i] > 0 && p_x[i] < M &&
+            p_y[i] > 0 && p_y[i] < N &&
+            p_z[i] > 0 && p_z[i] < O) {
+
+            const int idx = IX((int)p_x[i], (int)p_y[i], (int)p_z[i]);        
             p_x[i] += u[idx] * dt;
             p_y[i] += v[idx] * dt;
             p_z[i] += w[idx] * dt;
+        } else {
+            fprintf(stderr, "outside\n");
         }
     }
 }
@@ -90,9 +100,9 @@ void add_velocities(float *u, float *v, float *w) {
     
     for (int y = 0; y < N; y++) {
         for (int x = 0; x < M; x++) {
-            u[IX(x, y, O / 2)] = 0.0f;
-            v[IX(x, y, O / 2)] = 0.2f;
-            w[IX(x, y, O / 2)] = 0.0f;
+            u[IX(x, y, 4)] = 0.0f;
+            v[IX(x, y, 4)] = 0.2f;
+            w[IX(x, y, 4)] = 0.0f;
         }
     }
 }
@@ -149,6 +159,7 @@ void write_particles(FILE *target) {
 int main() {
     const float dt = 0.4f; // delta time
 
+    srand(1337);
     //const int WIDTH = 320;
     //const int HEIGHT = 200;
     //unsigned char buffer[WIDTH * HEIGHT * 3];
@@ -156,13 +167,14 @@ int main() {
     allocate_it();
     random_particles();
     while (1) {
-        add_densities(dens_prev);
+        //add_densities(dens_prev);
         add_velocities(u_prev, v_prev, w_prev);
 
         simulate(dt);
         write_particles(stdout);
         //render(buffer, WIDTH, HEIGHT);
         //_write(buffer, WIDTH * HEIGHT, stdout);
+        usleep(1000000 / 4);
     }
 
     return 0;

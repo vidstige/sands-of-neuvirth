@@ -10,10 +10,12 @@ const compiler = webpack(cfg);
 const app = express();
 
 app.get('/api/sand', function (req, res) {
-  spawn('solver/fluid').stdout.pipe(res);
-  /*setInterval(function() {
-    res.write('1234567890');
-  }, 250);*/
+  res.header("Content-Type", "application/octet-stream");
+  res.header('Content-Transfer-Encoding', 'binary');
+
+  const child = spawn('solver/fluid');
+  child.stdout.pipe(res);
+  child.stderr.pipe(process.stdout);
 });
 
 app.use(middleware(compiler, {
